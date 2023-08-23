@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+numpy
+pandas
+# và những thư viện khác cần thiết
+random
+FastAPI
+Union
