@@ -6,13 +6,15 @@ from keras.models import load_model
 
 app = FastAPI()
 
+word_dict = {0:'A',1:'B',2:'C',3:'D'}
+model = load_model('model_hand.h5')
+    
+
 @app.post("/upload_image/")
 async def upload_image(image: UploadFile):
     # Đảm bảo file tải lên là hình ảnh
     if not image.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
         return {"error": "Only image files (jpg, jpeg, png, gif) are allowed."}
-    word_dict = {0:'A',1:'B',2:'C',3:'D'}
-    model = load_model('model_hand.h5')
     
     max_letter = crop_letters_from_image(image)
     if max_letter is not None:
@@ -21,9 +23,9 @@ async def upload_image(image: UploadFile):
         max_letter = cv2.copyMakeBorder(max_letter, padding_pixels, padding_pixels, padding_pixels, padding_pixels, cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
         img = cv2.resize(max_letter, (28, 28))
-	img_final = cv2.resize(img, (28, 28))
-    	img_final = np.reshape(img_final, (1, 28, 28, 1))
-    	img_pred = word_dict[np.argmax(model.predict(img_final))]
+	    img_final = cv2.resize(img, (28, 28))
+        img_final = np.reshape(img_final, (1, 28, 28, 1))
+        img_pred = word_dict[np.argmax(model.predict(img_final))]
 
 
     return {"message": img_pred }
