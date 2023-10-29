@@ -61,9 +61,11 @@ def crop_letters_from_image(img):
     # Đọc hình ảnh từ tệp và xử lý
 
     img = crop_image(img, 33, 85)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
 
     # Loại bỏ nhiễu
-    img = cv2.fastNlMeansDenoising(img, None, 10, 7, 21)
+    img = cv2.fastNlMeansDenoising(gray, None, 10, 7, 21)
     blur = cv2.GaussianBlur(img, (5, 5), 0)
     thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
 
