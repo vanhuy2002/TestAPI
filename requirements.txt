@@ -8,5 +8,4 @@ python-multipart
 opencv-python-headless
 keras.models
 tensorflow
-io
 Pillow
