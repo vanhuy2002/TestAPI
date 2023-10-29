@@ -14,11 +14,7 @@ model = load_model('model_hand.h5')
 @app.post("/upload_image/")
 async def upload_image(image_data: bytes):
     # Đảm bảo dữ liệu hình ảnh không rỗng
-    if not image_data:
-        return {"error": "Invalid image data."}
-
-    # Chuyển dữ liệu hình ảnh từ bytes thành hình ảnh NumPy
-    img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+    img = cv2.imread("1.jpg", cv2.IMREAD_GRAYSCALE)
     max_letter = crop_letters_from_image(img)
 
     if max_letter is not None:
