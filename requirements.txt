@@ -5,5 +5,5 @@ pandas
 FastAPI
 Union
 python-multipart
-cv2
+opencv-python-headless
 keras.models
