@@ -11,16 +11,14 @@ app = FastAPI()
 word_dict = {0:'A',1:'B',2:'C',3:'D'}
 model = load_model('model_hand.h5')
     
-
 @app.post("/upload_image/")
 async def upload_image(image_data: bytes):
-    # Đảm bảo file tải lên là hình ảnh
+    # Đảm bảo dữ liệu hình ảnh không rỗng
     if not image_data:
         return {"error": "Invalid image data."}
 
-    # Chuyển đổi dữ liệu hình ảnh thành hình ảnh NumPy
-    img = Image.open(BytesIO(image_data))
-    img = np.array(img)
+    # Chuyển dữ liệu hình ảnh từ bytes thành hình ảnh NumPy
+    img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
     max_letter = crop_letters_from_image(img)
 
     if max_letter is not None:
@@ -32,8 +30,8 @@ async def upload_image(image_data: bytes):
         img_final = np.reshape(img, (1, 28, 28, 1))
         img_pred = word_dict[np.argmax(model.predict(img_final))]
 
+    return {"message": img_pred}
 
-    return {"message": img_pred }
 
 if __name__ == "__main__":
     import uvicorn
