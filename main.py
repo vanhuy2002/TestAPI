@@ -16,7 +16,14 @@ async def upload_image(image: UploadFile):
     if not image.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
         return {"error": "Only image files (jpg, jpeg, png, gif) are allowed."}
     
-    max_letter = crop_letters_from_image(image)
+    # Đọc dữ liệu từ UploadFile thành một mảng bytes
+    image_data = await image.read()
+    
+    # Chuyển đổi mảng bytes thành một hình ảnh thông thường
+    img_array = np.frombuffer(image_data, np.uint8)
+    img_normal = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+
+    max_letter = crop_letters_from_image(img_normal)
     if max_letter is not None:
         # Thêm khoảng trắng bằng cách mở rộng ảnh
         padding_pixels = 2  # Số lượng pixel bạn muốn thêm vào từ mỗi phía
@@ -49,6 +56,7 @@ def crop_image(img, crop_height, crop_width):
     
 import cv2
 import numpy as np
+
 
 def crop_letters_from_image(img):
     # Đọc hình ảnh từ tệp và xử lý
