@@ -3,6 +3,8 @@ import os
 import cv2
 import numpy as np
 from keras.models import load_model
+from PIL import Image
+from io import BytesIO
 
 app = FastAPI()
 
@@ -11,22 +13,16 @@ model = load_model('model_hand.h5')
     
 
 @app.post("/upload_image/")
-async def upload_image(image: UploadFile):
+async def upload_image(image_data: bytes):
     # Đảm bảo file tải lên là hình ảnh
-    if not image.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
-        return {"error": "Only image files (jpg, jpeg, png, gif) are allowed."}
-    
-    # Đọc dữ liệu từ UploadFile thành một mảng bytes
-    image_data = await image.read()
-    
-    # Chuyển đổi mảng bytes thành mảng NumPy
-    img_normal = np.frombuffer(image_data, np.uint8)
-    print(img_normal.shape)  # In kích thước của img_normal
-    print(img_normal.dtype)  # In kiểu dữ liệu của img_normal
+    if not image_data:
+        return {"error": "Invalid image data."}
 
+    # Chuyển đổi dữ liệu hình ảnh thành hình ảnh NumPy
+    img = Image.open(BytesIO(image_data))
+    img = np.array(img)
+    max_letter = crop_letters_from_image(img)
 
-
-    max_letter = crop_letters_from_image(img_normal)
     if max_letter is not None:
         # Thêm khoảng trắng bằng cách mở rộng ảnh
         padding_pixels = 2  # Số lượng pixel bạn muốn thêm vào từ mỗi phía
