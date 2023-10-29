@@ -49,7 +49,6 @@ def crop_image(img, crop_height, crop_width):
     
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 
 def crop_letters_from_image(image_path):
     # Đọc hình ảnh từ tệp và xử lý
