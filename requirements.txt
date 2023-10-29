@@ -5,3 +5,4 @@ pandas
 # và những thư viện khác cần thiết
 FastAPI
 Union
+python-multipart
