@@ -1,4 +1,8 @@
 from fastapi import FastAPI, UploadFile, File
+import os
+import cv2
+import numpy as np
+from keras.models import load_model
 
 app = FastAPI()
 
@@ -7,13 +11,82 @@ async def upload_image(image: UploadFile):
     # Đảm bảo file tải lên là hình ảnh
     if not image.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
         return {"error": "Only image files (jpg, jpeg, png, gif) are allowed."}
+    word_dict = {0:'A',1:'B',2:'C',3:'D'}
+    model = load_model('model_hand.h5')
+    
+    max_letter = crop_letters_from_image(image)
+    if max_letter is not None:
+        # Thêm khoảng trắng bằng cách mở rộng ảnh
+        padding_pixels = 2  # Số lượng pixel bạn muốn thêm vào từ mỗi phía
+        max_letter = cv2.copyMakeBorder(max_letter, padding_pixels, padding_pixels, padding_pixels, padding_pixels, cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
-    # Lưu file ảnh vào thư mục lưu trữ
-    # with open(f"uploads/{image.filename}", "wb") as file:
-    #    file.write(image.file.read())
+        img = cv2.resize(max_letter, (28, 28))
+	img_final = cv2.resize(img, (28, 28))
+    	img_final = np.reshape(img_final, (1, 28, 28, 1))
+    	img_pred = word_dict[np.argmax(model.predict(img_final))]
 
-    return {"message": "Image uploaded successfully"}
+
+    return {"message": img_pred }
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+def crop_image(img, crop_height, crop_width):
+    height, width = img.shape[:2]
+    
+    start_row = (height - crop_height) // 2
+    start_col = (width - crop_width) // 2
+    
+    end_row = start_row + crop_height
+    end_col = start_col + crop_width
+    
+    cropped_img = img[start_row:end_row, start_col:end_col]
+    
+    return cropped_img
+    
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+def crop_letters_from_image(image_path):
+    # Đọc hình ảnh từ tệp và xử lý
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    
+    img = crop_image(img, 33, 85)
+
+    # Loại bỏ nhiễu
+    img = cv2.fastNlMeansDenoising(img, None, 10, 7, 21)
+    blur = cv2.GaussianBlur(img, (5, 5), 0)
+    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+
+    # Tìm các đối tượng (chữ cái) trong hình ảnh bằng contour detection
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    
+    max_area = 0
+    max_letter = None
+
+    # Duyệt qua các đối tượng tìm thấy
+    for contour in contours:
+        # Tính toán diện tích của đối tượng
+        area = cv2.contourArea(contour)
+
+        # Nếu diện tích đủ lớn và lớn hơn diện tích lớn nhất hiện tại
+        if area > 30 and area > max_area:
+            x, y, w, h = cv2.boundingRect(contour)
+
+            # Cắt chữ cái từ hình ảnh gốc
+            max_letter = img[y:y+h, x:x+w]
+
+            # Chuyển đổi thành hình ảnh nhị phân để làm nổi bật
+            max_letter = cv2.threshold(max_letter, 160, 255, cv2.THRESH_BINARY_INV)[1]
+
+             # Đảo ngược màu sắc của ảnh (nền đen, chữ trắng)
+            # max_letter = cv2.bitwise_not(max_letter)
+
+            max_area = area  # Cập nhật diện tích lớn nhất
+    return max_letter
+
+

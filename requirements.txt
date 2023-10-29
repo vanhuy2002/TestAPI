@@ -2,7 +2,9 @@ fastapi
 uvicorn
 numpy
 pandas
-# và những thư viện khác cần thiết
 FastAPI
 Union
 python-multipart
+os
+cv2
+keras.models
