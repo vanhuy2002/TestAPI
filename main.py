@@ -1,18 +1,19 @@
-from typing import Union
-import random
-
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 
 app = FastAPI()
 
+@app.post("/upload_image/")
+async def upload_image(image: UploadFile):
+    # Đảm bảo file tải lên là hình ảnh
+    if not image.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+        return {"error": "Only image files (jpg, jpeg, png, gif) are allowed."}
 
-@app.get("/generate_answers/")
-async def generate_answers(n: int):
-    answers = []
-    options = ['A', 'B', 'C', 'D']
+    # Lưu file ảnh vào thư mục lưu trữ
+    with open(f"uploads/{image.filename}", "wb") as file:
+        file.write(image.file.read())
 
-    for _ in range(n):
-        random_answer = random.choice(options)
-        answers.append(random_answer)
+    return {"message": "Image uploaded successfully"}
 
-    return {"answers": answers}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
