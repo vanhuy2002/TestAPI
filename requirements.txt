@@ -5,6 +5,5 @@ pandas
 FastAPI
 Union
 python-multipart
-os
 cv2
 keras.models
