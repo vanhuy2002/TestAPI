@@ -50,10 +50,9 @@ def crop_image(img, crop_height, crop_width):
 import cv2
 import numpy as np
 
-def crop_letters_from_image(image_path):
+def crop_letters_from_image(img):
     # Đọc hình ảnh từ tệp và xử lý
-    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    
+
     img = crop_image(img, 33, 85)
 
     # Loại bỏ nhiễu
