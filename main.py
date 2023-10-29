@@ -18,6 +18,9 @@ async def upload_image(image: UploadFile):
     
     # Đọc dữ liệu từ UploadFile thành một mảng bytes
     image_data = await image.read()
+    if not image_data:
+        return {"error": "Failed to read image data from UploadFile."}
+
     
     # Chuyển đổi mảng bytes thành một hình ảnh thông thường
     img_array = np.frombuffer(image_data, np.uint8)
