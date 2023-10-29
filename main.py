@@ -21,7 +21,10 @@ async def upload_image(image: UploadFile):
     
     # Chuyển đổi mảng bytes thành mảng NumPy
     img_normal = np.frombuffer(image_data, np.uint8)
-    
+    print(img_normal.shape)  # In kích thước của img_normal
+    print(img_normal.dtype)  # In kiểu dữ liệu của img_normal
+
+
 
     max_letter = crop_letters_from_image(img_normal)
     if max_letter is not None:
