@@ -14,13 +14,13 @@ model = load_model('model_hand.h5')
 async def upload_image(image: UploadFile = File(...)):
 
     # Đọc file upload
-    # image_data = await image.read() 
+    image_data = await image.read() 
   
     # Chuyển về ndarray
-    # img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+    img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
 
     # Đảm bảo dữ liệu hình ảnh không rỗng
-    img = cv2.imread("1.jpg", cv2.IMREAD_GRAYSCALE)
+    # img = cv2.imread("1.jpg", cv2.IMREAD_GRAYSCALE)
     max_letter = crop_letters_from_image(img)
 
     if max_letter is not None:
