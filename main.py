@@ -23,8 +23,7 @@ async def upload_image(image: UploadFile):
         max_letter = cv2.copyMakeBorder(max_letter, padding_pixels, padding_pixels, padding_pixels, padding_pixels, cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
         img = cv2.resize(max_letter, (28, 28))
-	    img_final = cv2.resize(img, (28, 28))
-        img_final = np.reshape(img_final, (1, 28, 28, 1))
+        img_final = np.reshape(img, (1, 28, 28, 1))
         img_pred = word_dict[np.argmax(model.predict(img_final))]
 
 
