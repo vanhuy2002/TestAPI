@@ -9,8 +9,8 @@ async def upload_image(image: UploadFile):
         return {"error": "Only image files (jpg, jpeg, png, gif) are allowed."}
 
     # Lưu file ảnh vào thư mục lưu trữ
-    with open(f"uploads/{image.filename}", "wb") as file:
-        file.write(image.file.read())
+    # with open(f"uploads/{image.filename}", "wb") as file:
+    #    file.write(image.file.read())
 
     return {"message": "Image uploaded successfully"}
 
