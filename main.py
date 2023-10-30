@@ -10,7 +10,7 @@ app = FastAPI()
 
 word_dict = {0:'A',1:'B',2:'C',3:'D'}
 model = load_model('model_hand.h5')
-@app.post("/upload_image/")
+@app.post("/upload_images/")
 async def upload_image(images: List[UploadFile] = File(...)):
 
     result = {}
@@ -43,6 +43,7 @@ def detect(img):
         img_pred = word_dict[np.argmax(predictions)]
         # Kiểm tra số lượng vật thể
         accuracy_threshold = 0.97  # Ngưỡng chấp nhận
+        print("Do chinh xac: " + max_prediction)
         if len(max_letter) >= 2 or max_prediction < accuracy_threshold:
             img_pred = 'O'
     else:
