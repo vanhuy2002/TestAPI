@@ -9,3 +9,4 @@ opencv-python-headless
 keras.models
 tensorflow
 Pillow
+json

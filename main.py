@@ -1,38 +1,54 @@
 from fastapi import FastAPI, UploadFile, File
+from typing import List
 import os
 import cv2
 import numpy as np
 from keras.models import load_model
-from PIL import Image
-from io import BytesIO
+import json
 
 app = FastAPI()
 
 word_dict = {0:'A',1:'B',2:'C',3:'D'}
 model = load_model('model_hand.h5')
 @app.post("/upload_image/")
-async def upload_image(image: UploadFile = File(...)):
+async def upload_image(images: List[UploadFile] = File(...)):
 
-    # Đọc file upload
-    image_data = await image.read() 
+    result = {}
+
+    for image in images: 
+
+        image_data = await image.read()
+        img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+
+        prediction = detect(img) # hàm nhận dạng ký tự
+
+        result[image.filename] = prediction # lưu kết quả vào dict
   
-    # Chuyển về ndarray
-    img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+    # Chuyển kết quả sang JSON
+    json_result = json.dumps(result)
 
-    # Đảm bảo dữ liệu hình ảnh không rỗng
-    # img = cv2.imread("1.jpg", cv2.IMREAD_GRAYSCALE)
+    return json_result
+
+
+def detect(img):
     max_letter = crop_letters_from_image(img)
-
     if max_letter is not None:
         # Thêm khoảng trắng bằng cách mở rộng ảnh
         padding_pixels = 2  # Số lượng pixel bạn muốn thêm vào từ mỗi phía
         max_letter = cv2.copyMakeBorder(max_letter, padding_pixels, padding_pixels, padding_pixels, padding_pixels, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-
         img = cv2.resize(max_letter, (28, 28))
         img_final = np.reshape(img, (1, 28, 28, 1))
-        img_pred = word_dict[np.argmax(model.predict(img_final))]
-
-    return {"message": img_pred}
+        predictions = model.predict(img_final)
+        max_prediction = np.max(predictions)
+        img_pred = word_dict[np.argmax(predictions)]
+        # Kiểm tra số lượng vật thể
+        accuracy_threshold = 0.97  # Ngưỡng chấp nhận
+        if len(max_letter) >= 2 or max_prediction < accuracy_threshold:
+            img_pred = 'O'
+    else:
+        img_pred = 'X'
+    
+    return img_pred
 
 
 if __name__ == "__main__":
