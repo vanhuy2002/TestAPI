@@ -43,8 +43,8 @@ def detect(img):
         img_pred = word_dict[np.argmax(predictions)]
         # Kiểm tra số lượng vật thể
         accuracy_threshold = 0.97  # Ngưỡng chấp nhận
-        print("Do chinh xac: " + str(max_prediction) + "Kich thuoc" + str(len(max_letter)))
-        if len(max_letter) >= 2 or max_prediction < accuracy_threshold:
+        
+        if max_prediction < accuracy_threshold:
             img_pred = 'O'
     else:
         img_pred = 'X'
