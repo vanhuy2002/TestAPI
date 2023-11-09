@@ -1,6 +1,5 @@
 from fastapi import FastAPI, UploadFile, File
 from typing import List
-import os
 import cv2
 import numpy as np
 from keras.models import load_model
@@ -15,7 +14,7 @@ async def upload_image(images: List[UploadFile] = File(...)):
 
     result = {}
 
-    for image in images: 
+    for image in images:
 
         image_data = await image.read()
         img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)

@@ -1,11 +1,8 @@
 fastapi
 uvicorn
 numpy
-pandas
-FastAPI
-Union
 python-multipart
-opencv-python-headless
+opencv-python
 keras.models
 tensorflow
 Pillow
