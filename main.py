@@ -30,13 +30,13 @@ async def upload_image(images: List[UploadFile] = File(...)):
 
 
 def detect(img):
-    max_letter = crop_letters_from_image(img)
+    max_letter = crop_letter_from_image(img)
     if max_letter is not None:
         # Thêm khoảng trắng bằng cách mở rộng ảnh
-        padding_pixels = 2  # Số lượng pixel bạn muốn thêm vào từ mỗi phía
-        max_letter = cv2.copyMakeBorder(max_letter, padding_pixels, padding_pixels, padding_pixels, padding_pixels, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-        img = cv2.resize(max_letter, (28, 28))
-        img_final = np.reshape(img, (1, 28, 28, 1))
+        padding_pixels = 5  # Số lượng pixel bạn muốn thêm vào từ mỗi phía
+        target_size = (28, 28)
+        img_padded = add_padding_and_resize(max_letter, padding_pixels, target_size)
+        img_final = np.reshape(img_padded, (1, 28, 28, 1))
         predictions = model.predict(img_final)
         max_prediction = np.max(predictions)
         img_pred = word_dict[np.argmax(predictions)]
@@ -72,45 +72,46 @@ def crop_image(img, crop_height, crop_width):
 import cv2
 import numpy as np
 
+# Hàm thêm khoảng trắng màu đen vào ảnh grayscale và giữ nguyên tỷ lệ khi resize
+def add_padding_and_resize(image, padding_pixels, target_size):
+    height, width = image.shape[:2]
 
-def crop_letters_from_image(img):
+    # Thêm khoảng trắng màu đen
+    padded_image = np.zeros((height + 2 * padding_pixels, width + 2 * padding_pixels), dtype=np.uint8)
+    padded_image[padding_pixels:padding_pixels + height, padding_pixels:padding_pixels + width] = image
+
+    # Resize ảnh và giữ nguyên tỷ lệ
+    # resized_image = cv2.resize(padded_image, target_size, interpolation=cv2.INTER_AREA)
+
+    return padded_image
+
+def crop_letter_from_image(img):
     # Đọc hình ảnh từ tệp và xử lý
-
-    img = crop_image(img, 33, 85)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
+    img = crop_image(img, 33, 75)
 
     # Loại bỏ nhiễu
-    img = cv2.fastNlMeansDenoising(gray, None, 10, 7, 21)
-    blur = cv2.GaussianBlur(img, (5, 5), 0)
+    img = cv2.fastNlMeansDenoising(img, None, 10, 7, 21)
+    # printImg(img, "2")
+    blur = cv2.GaussianBlur(img, (3, 3), 0)
+    # printImg(blur, "3")
     thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
 
-    # Tìm các đối tượng (chữ cái) trong hình ảnh bằng contour detection
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Tìm toàn bộ các điểm màu đen trong ảnh
+    non_zero_pixels = cv2.findNonZero(thresh)
 
-    
-    max_area = 0
-    max_letter = None
+    # Nếu không có điểm màu đen, trả về None
+    if non_zero_pixels is None:
+        return None
 
-    # Duyệt qua các đối tượng tìm thấy
-    for contour in contours:
-        # Tính toán diện tích của đối tượng
-        area = cv2.contourArea(contour)
+    # Xác định bounding box của ảnh chữ cái
+    x, y, w, h = cv2.boundingRect(non_zero_pixels)
 
-        # Nếu diện tích đủ lớn và lớn hơn diện tích lớn nhất hiện tại
-        if area > 30 and area > max_area:
-            x, y, w, h = cv2.boundingRect(contour)
+    # Cắt ảnh theo bounding box
+    cropped_letter = thresh[y:y+h, x:x+w]
 
-            # Cắt chữ cái từ hình ảnh gốc
-            max_letter = img[y:y+h, x:x+w]
 
-            # Chuyển đổi thành hình ảnh nhị phân để làm nổi bật
-            max_letter = cv2.threshold(max_letter, 160, 255, cv2.THRESH_BINARY_INV)[1]
+    return cropped_letter
 
-             # Đảo ngược màu sắc của ảnh (nền đen, chữ trắng)
-            # max_letter = cv2.bitwise_not(max_letter)
 
-            max_area = area  # Cập nhật diện tích lớn nhất
-    return max_letter
 
 
