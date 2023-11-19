@@ -17,7 +17,7 @@ async def upload_image(images: List[UploadFile] = File(...)):
     for image in images:
 
         image_data = await image.read()
-        img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+        img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_GRAYSCALE)
 
         prediction = detect(img) # hàm nhận dạng ký tự
 
