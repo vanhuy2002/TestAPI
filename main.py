@@ -36,7 +36,8 @@ def detect(img):
         padding_pixels = 5  # Số lượng pixel bạn muốn thêm vào từ mỗi phía
         target_size = (28, 28)
         img_padded = add_padding_and_resize(max_letter, padding_pixels, target_size)
-        img_final = np.reshape(img_padded, (1, 28, 28, 1))
+        img_resize = cv2.resize(img_padded, (28, 28))
+        img_final = np.reshape(img_resize, (1, 28, 28, 1))
         predictions = model.predict(img_final)
         max_prediction = np.max(predictions)
         img_pred = word_dict[np.argmax(predictions)]
