@@ -28,7 +28,7 @@ async def get_processed_images():
 
 async def process_image(image: UploadFile = File(...)):
     image_data = await image.read()
-    img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+    img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_GRAYSCALE)
     prediction = await detect(img)
     return {image.filename: prediction}
 
