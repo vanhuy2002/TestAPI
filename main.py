@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from keras.models import load_model
 import json
+import authentication
 
 app = FastAPI()
 
@@ -33,15 +34,18 @@ async def process_image(image: UploadFile = File(...)):
     return {image.filename: prediction}
 
 @app.post("/upload_images/")
-async def upload_image(images: List[UploadFile] = File(...)):
-    results = []
-    for image in images:
-        result = await process_image(image)
-        results.append(result)
+async def upload_image(uid: str,images: List[UploadFile] = File(...)):
+    if authentication.check_uid_exist(uid):
+        results = []
+        for image in images:
+            result = await process_image(image)
+            results.append(result)
 
-    global processed_images
-    processed_images = results
-    return {"message": "POST request received", "results": results}
+        global processed_images
+        processed_images = results
+        return {"message": "Request successful", "results": results}
+    else:
+        return {"message": "You have no permisstion to access"}
 
 
 async def detect(img):
@@ -68,6 +72,7 @@ async def detect(img):
 
 if __name__ == "__main__":
     import uvicorn
+    authentication.initialize_firebase_app()
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
