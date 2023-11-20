@@ -20,6 +20,7 @@ app.add_middleware(
 
 word_dict = {0:'A',1:'B',2:'C',3:'D'}
 model = load_model('model_hand.h5')
+authentication.initialize_firebase_app()
 processed_images = {}
 @app.get("/get-processed-images/")
 async def get_processed_images():
@@ -72,7 +73,6 @@ async def detect(img):
 
 if __name__ == "__main__":
     import uvicorn
-    authentication.initialize_firebase_app()
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
