@@ -1,36 +1,67 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Depends
 from typing import List
 import cv2
 import numpy as np
 from keras.models import load_model
 import json
 
-app = FastAPI()
+app = FastAPI(debug=True)
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Có thể thay thế bằng danh sách các nguồn được phép
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 word_dict = {0:'A',1:'B',2:'C',3:'D'}
 model = load_model('model_hand.h5')
+processed_images = {}
+@app.get("/get-processed-images/")
+async def get_processed_images():
+    global processed_images
+    result_final = json.dumps(processed_images)
+    return result_final
+
+async def process_image(image: UploadFile = File(...)):
+    image_data = await image.read()
+    img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+    prediction = await detect(img)
+    return {image.filename: prediction}
+
 @app.post("/upload_images/")
 async def upload_image(images: List[UploadFile] = File(...)):
 
-    result = {}
+    # result = {}
 
-    for image in images:
+    # for image in images:
 
-        image_data = await image.read()
-        img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+    #     image_data = await image.read()
+    #     img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
 
-        prediction = detect(img) # hàm nhận dạng ký tự
+    #     prediction = detect(img) # hàm nhận dạng ký tự
 
-        result[image.filename] = prediction # lưu kết quả vào dict
+    #     result[image.filename] = prediction # lưu kết quả vào dict
   
-    # Chuyển kết quả sang JSON
-    json_result = json.dumps(result)
+    # # Chuyển kết quả sang JSON
+    # # json_result = json.dumps(result)
+    # global processed_images
+    # processed_images = result
+    # return {"message": "POST request received"}
+    results = []
+    for image in images:
+        result = await process_image(image)
+        results.append(result)
 
-    return json_result
+    global processed_images
+    processed_images = results
+    return {"message": "POST request received", "results": results}
 
-
-def detect(img):
-    max_letter = crop_letters_from_image(img)
+async def detect(img):
+    max_letter = await crop_letters_from_image(img)
     if max_letter is not None:
         # Thêm khoảng trắng bằng cách mở rộng ảnh
         padding_pixels = 2  # Số lượng pixel bạn muốn thêm vào từ mỗi phía
@@ -56,7 +87,7 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
-def crop_image(img, crop_height, crop_width):
+async def crop_image(img, crop_height, crop_width):
     height, width = img.shape[:2]
     
     start_row = (height - crop_height) // 2
@@ -73,10 +104,10 @@ import cv2
 import numpy as np
 
 
-def crop_letters_from_image(img):
+async def crop_letters_from_image(img):
     # Đọc hình ảnh từ tệp và xử lý
 
-    img = crop_image(img, 33, 85)
+    img = await crop_image(img, 33, 85)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 
