@@ -3,7 +3,6 @@ from typing import List
 import cv2
 import numpy as np
 from keras.models import load_model
-import json
 import authentication
 
 app = FastAPI()
@@ -21,29 +20,23 @@ app.add_middleware(
 word_dict = {0:'A',1:'B',2:'C',3:'D'}
 model = load_model('model_hand.h5')
 authentication.initialize_firebase_app()
-processed_images = {}
-@app.get("/get-processed-images/")
+@app.get("/")
 async def get_processed_images():
-    global processed_images
-    result_final = json.dumps(processed_images)
-    return result_final
+    return {"message": "Not data to get"}
 
 async def process_image(image: UploadFile = File(...)):
     image_data = await image.read()
     img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_GRAYSCALE)
     prediction = await detect(img)
-    return {image.filename: prediction}
+    return prediction
 
 @app.post("/upload_images/")
 async def upload_image(uid: str,images: List[UploadFile] = File(...)):
     if authentication.check_uid_exist(uid):
-        results = []
+        results = ""
         for image in images:
-            result = await process_image(image)
-            results.append(result)
+            results += await process_image(image)
 
-        global processed_images
-        processed_images = results
         return {"message": "Request successful", "results": results}
     else:
         return {"message": "You have no permisstion to access"}
