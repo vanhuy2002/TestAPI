@@ -4,18 +4,9 @@ import cv2
 import numpy as np
 from keras.models import load_model
 import authentication
-
+import time
 app = FastAPI()
 
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Có thể thay thế bằng danh sách các nguồn được phép
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 word_dict = {0:'A',1:'B',2:'C',3:'D'}
 model = load_model('model_hand.h5')
@@ -25,24 +16,30 @@ async def get_processed_images():
     return {"message": "Not data to get"}
 
 async def process_image(image: UploadFile = File(...)):
+    start_doc = time.time()
     image_data = await image.read()
+    end_doc = time.time();
+    print("Thoi gian doc anh" + end_doc - start_doc)
     img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_GRAYSCALE)
     prediction = await detect(img)
     return prediction
 
 @app.post("/upload_images/")
 async def upload_image(uid: str,images: List[UploadFile] = File(...)):
+    # Log time
+    start = time.time()
     if authentication.check_uid_exist(uid):
         results = ""
         for image in images:
             results += await process_image(image)
-
+        print("Tong time: " + time.time() - start)
         return {"message": "Request successful", "results": results}
     else:
         return {"message": "You have no permisstion to access"}
 
 
 async def detect(img):
+    start_pre = time.time()
     max_letter = await crop_letter_from_image(img)
     if max_letter is not None:
         # Thêm khoảng trắng bằng cách mở rộng ảnh
@@ -50,6 +47,8 @@ async def detect(img):
         img_padded = await add_padding_and_resize(max_letter, padding_pixels)
         img_resize = cv2.resize(img_padded, (28, 28))
         img_final = np.reshape(img_resize, (1, 28, 28, 1))
+        end_pre = time.time()
+        print("Time tien xu ly: " + end_pre - start_pre)
         predictions = model.predict(img_final)
         max_prediction = np.max(predictions)
         img_pred = word_dict[np.argmax(predictions)]
@@ -60,7 +59,7 @@ async def detect(img):
             img_pred = 'O'
     else:
         img_pred = 'X'
-    
+    print("Time nhan dien: " + time.time() - end_pre)
     return img_pred
 
 
