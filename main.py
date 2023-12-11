@@ -19,7 +19,7 @@ async def process_image(image: UploadFile = File(...)):
     start_doc = time.time()
     image_data = await image.read()
     end_doc = time.time();
-    print("Thoi gian doc anh" + end_doc - start_doc)
+    print("Thoi gian doc anh" + str(end_doc - start_doc))
     img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_GRAYSCALE)
     prediction = await detect(img)
     return prediction
@@ -32,7 +32,7 @@ async def upload_image(uid: str,images: List[UploadFile] = File(...)):
         results = ""
         for image in images:
             results += await process_image(image)
-        print("Tong time: " + time.time() - start)
+        print("Tong time: " + str(time.time() - start))
         return {"message": "Request successful", "results": results}
     else:
         return {"message": "You have no permisstion to access"}
@@ -48,7 +48,7 @@ async def detect(img):
         img_resize = cv2.resize(img_padded, (28, 28))
         img_final = np.reshape(img_resize, (1, 28, 28, 1))
         end_pre = time.time()
-        print("Time tien xu ly: " + end_pre - start_pre)
+        print("Time tien xu ly: " + str(end_pre - start_pre))
         predictions = model.predict(img_final)
         max_prediction = np.max(predictions)
         img_pred = word_dict[np.argmax(predictions)]
@@ -59,7 +59,7 @@ async def detect(img):
             img_pred = 'O'
     else:
         img_pred = 'X'
-    print("Time nhan dien: " + time.time() - end_pre)
+    print("Time nhan dien: " + str(time.time() - end_pre))
     return img_pred
 
 
