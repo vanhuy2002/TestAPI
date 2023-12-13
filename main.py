@@ -5,6 +5,7 @@ import numpy as np
 from keras.models import load_model
 import authentication
 import time
+from datetime import datetime
 app = FastAPI()
 
 
@@ -28,6 +29,16 @@ async def process_image(image: UploadFile = File(...)):
 async def upload_image(uid: str,images: List[UploadFile] = File(...)):
     # Log time
     start = time.time()
+    current_time_seconds = time.time()
+
+    # Chuyển đổi thời điểm tính bằng giây thành đối tượng datetime
+    current_datetime = datetime.fromtimestamp(current_time_seconds)
+
+    # Chuyển đổi thành mili giây từ epoch
+    milliseconds_since_epoch = int(current_datetime.timestamp() * 1000)
+
+    # In ra mili giây từ epoch
+    print("Thoi diem nhan anh" + str(milliseconds_since_epoch))
     if authentication.check_uid_exist(uid):
         results = ""
         for image in images:
