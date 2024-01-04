@@ -64,7 +64,7 @@ async def detect(img):
         max_prediction = np.max(predictions)
         img_pred = word_dict[np.argmax(predictions)]
         # Kiểm tra số lượng vật thể
-        accuracy_threshold = 0.97  # Ngưỡng chấp nhận
+        accuracy_threshold = 0.95  # Ngưỡng chấp nhận
         
         if max_prediction < accuracy_threshold:
             img_pred = 'O'
