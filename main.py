@@ -13,7 +13,7 @@ word_dict = {0:'A',1:'B',2:'C',3:'D'}
 dig_dict = {0:'0',1:'1',2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9'}
 
 model = load_model('model_hand.h5')
-digitModel = load_model('DigitModel.h5')
+digitModel = load_model('model_digit_new.h5')
 
 authentication.initialize_firebase_app()
 @app.get("/")
@@ -61,7 +61,7 @@ async def upload_image(uid: str,images: List[UploadFile] = File(...)):
                 results += await process_image(image)
             else:
                 results += await process_image_digit(image)
-            if image == image[8]:
+            if image == images[8]:
                 isWord = True
         print("Tong time: " + str(time.time() - start))
         return {"message": "Request successful", "results": results}
@@ -84,7 +84,7 @@ async def detect(img):
         max_prediction = np.max(predictions)
         img_pred = word_dict[np.argmax(predictions)]
         # Kiểm tra số lượng vật thể
-        accuracy_threshold = 0.95  # Ngưỡng chấp nhận
+        accuracy_threshold = 0.8  # Ngưỡng chấp nhận
         
         if max_prediction < accuracy_threshold:
             img_pred = 'O'
@@ -99,12 +99,8 @@ async def detect_digit(img):
         # Thêm khoảng trắng bằng cách mở rộng ảnh
         padding_pixels = 6  # Số lượng pixel bạn muốn thêm vào từ mỗi phía
         img_padded = await add_padding_and_resize(max_letter, padding_pixels)
-        # Đảm bảo kích thước ảnh đầu vào phù hợp với kiến trúc mô hình
-        img_final = cv2.resize(img_padded, (28, 28))
-        # Thêm một trục cho đầu vào để phù hợp với kích thước (batch_size, time_steps, features) của LSTM
-        img_final = np.expand_dims(img_final, axis=0)
-        # Chuyển đổi sang định dạng dữ liệu phù hợp (batch_size, time_steps, features)
-        img_final = np.reshape(img_final, (1, 28, 28))
+        img_resize = cv2.resize(img_padded, (28, 28))
+        img_final = np.reshape(img_resize, (1, 28, 28, 1))
 
         predictions = digitModel.predict(img_final)
         
