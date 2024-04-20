@@ -61,7 +61,7 @@ async def upload_image(uid: str,images: List[UploadFile] = File(...)):
                 results += await process_image(image)
             else:
                 results += await process_image_digit(image)
-            if image == image[8]:
+            if image == images[8]:
                 isWord = True
         print("Tong time: " + str(time.time() - start))
         return {"message": "Request successful", "results": results}
