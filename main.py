@@ -29,13 +29,13 @@ async def process_image(image: UploadFile = File(...)):
     prediction = await detect(img)
     return prediction
 
-async def process_image_digit(image: UploadFile = File(...)):
+def process_image_digit(image: UploadFile = File(...)):
     # start_doc = time.time()
-    image_data = await image.read()
+    image_data = image.read()
     # end_doc = time.time();
     # print("Thoi gian doc anh" + str(end_doc - start_doc))
     img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_GRAYSCALE)
-    prediction = await detect_digit(img)
+    prediction = detect_digit(img)
     return prediction
 
 @app.post("/upload_images/")
@@ -93,12 +93,12 @@ async def detect(img):
     # print("Time nhan dien: " + str(time.time() - end_pre))
     return img_pred
 
-async def detect_digit(img):
-    max_letter = await crop_letter_from_image1(img)
+def detect_digit(img):
+    max_letter = crop_letter_from_image1(img)
     if max_letter is not None:
         # Thêm khoảng trắng bằng cách mở rộng ảnh
         padding_pixels = 6  # Số lượng pixel bạn muốn thêm vào từ mỗi phía
-        img_padded = await add_padding_and_resize(max_letter, padding_pixels)
+        img_padded = add_padding_and_resize(max_letter, padding_pixels)
         img_resize = cv2.resize(img_padded, (28, 28))
         img_final = np.reshape(img_resize, (1, 28, 28, 1))
 
