@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI, UploadFile, File
 from typing import List
 import cv2
@@ -6,8 +7,8 @@ from keras.models import load_model
 import authentication
 import time
 from datetime import datetime
-app = FastAPI()
 
+app = FastAPI()
 
 word_dict = {0:'A',1:'B',2:'C',3:'D'}
 dig_dict = {0:'0',1:'1',2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9'}
@@ -16,58 +17,50 @@ model = load_model('model_hand.h5')
 digitModel = load_model('model_digit_new.h5')
 
 authentication.initialize_firebase_app()
+
+# Sử dụng asyncio.Queue để sắp xếp kết quả theo thứ tự
+results_queue = asyncio.Queue()
+
 @app.get("/")
 async def get_processed_images():
     return {"message": "Not data to get"}
 
-async def process_image(image: UploadFile = File(...)):
-    # start_doc = time.time()
+async def process_image(image: UploadFile):
     image_data = await image.read()
-    # end_doc = time.time();
-    # print("Thoi gian doc anh" + str(end_doc - start_doc))
     img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_GRAYSCALE)
     prediction = await detect(img)
-    return prediction
+    await results_queue.put(prediction)
 
-def process_image_digit(image: UploadFile = File(...)):
-    # start_doc = time.time()
-    image_data = image.read()
-    # end_doc = time.time();
-    # print("Thoi gian doc anh" + str(end_doc - start_doc))
+async def process_image_digit(image: UploadFile):
+    image_data = await image.read()
     img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_GRAYSCALE)
-    prediction = detect_digit(img)
-    return prediction
+    prediction = await detect_digit(img)
+    await results_queue.put(prediction)
 
 @app.post("/upload_images/")
-async def upload_image(uid: str,images: List[UploadFile] = File(...)):
-    # Log time
+async def upload_image(uid: str, images: List[UploadFile]):
     start = time.time()
     current_time_seconds = time.time()
-
-    # Chuyển đổi thời điểm tính bằng giây thành đối tượng datetime
     current_datetime = datetime.fromtimestamp(current_time_seconds)
-
-    # Chuyển đổi thành mili giây từ epoch
     milliseconds_since_epoch = int(current_datetime.timestamp() * 1000)
-    
     isWord = False
-
-    # In ra mili giây từ epoch
     print("Thoi diem nhan anh" + str(milliseconds_since_epoch))
     if authentication.check_uid_exist(uid):
         results = ""
         for image in images:
             if isWord:
-                results += await process_image(image)
+                await process_image(image)
             else:
-                results += await process_image_digit(image)
-            if image == images[8]:
+                await process_image_digit(image)
+            if image == images[-1]:
                 isWord = True
         print("Tong time: " + str(time.time() - start))
-        return {"message": "Request successful", "results": results}
+        final_results = []
+        while not results_queue.empty():
+            final_results.append(await results_queue.get())
+        return {"message": "Request successful", "results": final_results}
     else:
         return {"message": "You have no permisstion to access"}
-
 
 async def detect(img):
     start_pre = time.time()
@@ -93,12 +86,12 @@ async def detect(img):
     # print("Time nhan dien: " + str(time.time() - end_pre))
     return img_pred
 
-def detect_digit(img):
-    max_letter = crop_letter_from_image1(img)
+async def detect_digit(img):
+    max_letter = await crop_letter_from_image1(img)
     if max_letter is not None:
         # Thêm khoảng trắng bằng cách mở rộng ảnh
         padding_pixels = 6  # Số lượng pixel bạn muốn thêm vào từ mỗi phía
-        img_padded = add_padding_and_resize(max_letter, padding_pixels)
+        img_padded = await add_padding_and_resize(max_letter, padding_pixels)
         img_resize = cv2.resize(img_padded, (28, 28))
         img_final = np.reshape(img_resize, (1, 28, 28, 1))
 
