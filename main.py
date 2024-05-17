@@ -46,12 +46,10 @@ async def upload_image(uid: str, images: List[UploadFile]):
     if authentication.check_uid_exist(uid):
         tasks = []
         for index, image in enumerate(images):
-            if isWord:
-                tasks.append(process_image(image, index))
-            else:
+            if index < 9:  # First 9 images are digits
                 tasks.append(process_image_digit(image, index))
-            if image == images[8]:
-                isWord = True
+            else:  # Remaining images are words
+                tasks.append(process_image(image, index))
         
         # Chạy tất cả các tác vụ đồng thời và chờ chúng hoàn thành
         results = await asyncio.gather(*tasks)
