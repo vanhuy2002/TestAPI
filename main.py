@@ -1,5 +1,5 @@
 import asyncio
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile
 from typing import List
 import cv2
 import numpy as np
@@ -41,7 +41,7 @@ async def upload_image(uid: str, images: List[UploadFile]):
     current_datetime = datetime.fromtimestamp(current_time_seconds)
     milliseconds_since_epoch = int(current_datetime.timestamp() * 1000)
     print("Thoi diem nhan anh: " + str(milliseconds_since_epoch))
-    
+
     if authentication.check_uid_exist(uid):
         tasks = []
         for index, image in enumerate(images):
@@ -112,7 +112,7 @@ async def crop_image(img, crop_height, crop_width):
 async def add_padding_and_resize(image, padding_pixels):
     height, width = image.shape[:2]
     padded_image = np.zeros((height + 2 * padding_pixels, width + 2 * padding_pixels), dtype=np.uint8)
-    padded_image[padding_pixels:padding_pixels + height, padding_pixels:padding_pixels + width] = image
+    padded_image[padding_pixels:padding_pixels + height, padding_pixels: padding_pixels + width] = image
     return padded_image
 
 async def crop_letter_from_image(img):
