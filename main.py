@@ -40,8 +40,7 @@ async def upload_image(uid: str, images: List[UploadFile]):
     current_time_seconds = time.time()
     current_datetime = datetime.fromtimestamp(current_time_seconds)
     milliseconds_since_epoch = int(current_datetime.timestamp() * 1000)
-    isWord = False
-    print("Thoi diem nhan anh" + str(milliseconds_since_epoch))
+    print("Thoi diem nhan anh: " + str(milliseconds_since_epoch))
     
     if authentication.check_uid_exist(uid):
         tasks = []
@@ -58,7 +57,7 @@ async def upload_image(uid: str, images: List[UploadFile]):
         results.sort(key=lambda x: x[0])
         
         # Lấy kết quả thực sự
-        final_results = [result for index, result in results]
+        final_results = [result[1] for result in results]
         
         print("Tong time: " + str(time.time() - start))
         return {"message": "Request successful", "results": final_results}
