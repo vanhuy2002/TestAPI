@@ -4,7 +4,7 @@ from typing import List
 import cv2
 import numpy as np
 from keras.models import load_model
-import authentication
+# import authentication
 import time
 from datetime import datetime
 
@@ -16,7 +16,7 @@ dig_dict = {0: '0', 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '
 model = load_model('model_hand.h5')
 digitModel = load_model('model_digit_new.h5')
 
-authentication.initialize_firebase_app()
+# authentication.initialize_firebase_app()
 
 @app.get("/")
 async def get_processed_images():
@@ -35,34 +35,32 @@ async def process_image_digit(image: UploadFile, index: int):
     return index, prediction
 
 @app.post("/upload_images/")
-async def upload_image(uid: str, images: List[UploadFile]):
+async def upload_image(images: List[UploadFile]):
     start = time.time()
     current_time_seconds = time.time()
     current_datetime = datetime.fromtimestamp(current_time_seconds)
     milliseconds_since_epoch = int(current_datetime.timestamp() * 1000)
     print("Thoi diem nhan anh: " + str(milliseconds_since_epoch))
 
-    if authentication.check_uid_exist(uid):
-        tasks = []
-        for index, image in enumerate(images):
-            if index < 9:  # First 9 images are digits
-                tasks.append(process_image_digit(image, index))
-            else:  # Remaining images are words
-                tasks.append(process_image(image, index))
-        
-        # Chạy tất cả các tác vụ đồng thời và chờ chúng hoàn thành
-        results = await asyncio.gather(*tasks)
-        
-        # Sắp xếp kết quả theo chỉ số ban đầu
-        results.sort(key=lambda x: x[0])
-        
-        # Lấy kết quả thực sự
-        final_results = [result[1] for result in results]
-        
-        print("Tong time: " + str(time.time() - start))
-        return {"message": "Request successful", "results": final_results}
-    else:
-        return {"message": "You have no permission to access"}
+    tasks = []
+    for index, image in enumerate(images):
+        if index < 9:  # First 9 images are digits
+            tasks.append(process_image_digit(image, index))
+        else:  # Remaining images are words
+            tasks.append(process_image(image, index))
+    
+    # Chạy tất cả các tác vụ đồng thời và chờ chúng hoàn thành
+    results = await asyncio.gather(*tasks)
+    
+    # Sắp xếp kết quả theo chỉ số ban đầu
+    results.sort(key=lambda x: x[0])
+    
+    # Lấy kết quả thực sự
+    final_results = [result[1] for result in results]
+    
+    print("Tong time: " + str(time.time() - start))
+    return {"message": "Request successful", "results": final_results}
+    
 
 async def detect(img):
     max_letter = await crop_letter_from_image(img)
