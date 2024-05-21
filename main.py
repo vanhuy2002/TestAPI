@@ -4,7 +4,6 @@ from typing import List
 import cv2
 import numpy as np
 from keras.models import load_model
-# import authentication
 import time
 from datetime import datetime
 
@@ -16,23 +15,21 @@ dig_dict = {0: '0', 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '
 model = load_model('model_hand.h5')
 digitModel = load_model('model_digit_new.h5')
 
-# authentication.initialize_firebase_app()
-
 @app.get("/")
 async def get_processed_images():
     return {"message": "No data to get"}
 
-async def process_image(image: UploadFile, index: int):
+async def process_image(image: UploadFile, index: int, results: List[str]):
     image_data = await image.read()
     img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_GRAYSCALE)
     prediction = await detect(img)
-    return index, prediction
+    results[index] = prediction
 
-async def process_image_digit(image: UploadFile, index: int):
+async def process_image_digit(image: UploadFile, index: int, results: List[str]):
     image_data = await image.read()
     img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_GRAYSCALE)
     prediction = await detect_digit(img)
-    return index, prediction
+    results[index] = prediction
 
 @app.post("/upload_images/")
 async def upload_image(images: List[UploadFile]):
@@ -42,29 +39,24 @@ async def upload_image(images: List[UploadFile]):
     milliseconds_since_epoch = int(current_datetime.timestamp() * 1000)
     print("Thoi diem nhan anh: " + str(milliseconds_since_epoch))
 
+    results = [None] * len(images)  # Initialize a list to hold results
     tasks = []
+
     for index, image in enumerate(images):
         if index < 9:  # First 9 images are digits
-            tasks.append(process_image_digit(image, index))
+            tasks.append(process_image_digit(image, index, results))
         else:  # Remaining images are words
-            tasks.append(process_image(image, index))
+            tasks.append(process_image(image, index, results))
     
     # Chạy tất cả các tác vụ đồng thời và chờ chúng hoàn thành
-    results = await asyncio.gather(*tasks)
-    
-    # Sắp xếp kết quả theo chỉ số ban đầu
-    results.sort(key=lambda x: x[0])
-    
-    # Lấy kết quả thực sự
-    final_results = [result[1] for result in results]
+    await asyncio.gather(*tasks)
     
     print("Tong time: " + str(time.time() - start))
-    return {"message": "Request successful", "results": final_results}
-    
+    return {"message": "Request successful", "results": results}
 
 async def detect(img):
     max_letter = await crop_letter_from_image(img)
-    if max_letter is not None:
+    if (max_letter is not None) and (max_letter.size != 0):
         padding_pixels = 5  # Số lượng pixel bạn muốn thêm vào từ mỗi phía
         img_padded = await add_padding_and_resize(max_letter, padding_pixels)
         img_resize = cv2.resize(img_padded, (28, 28))
@@ -82,7 +74,7 @@ async def detect(img):
 
 async def detect_digit(img):
     max_letter = await crop_letter_from_image1(img)
-    if max_letter is not None:
+    if (max_letter is not None) and (max_letter.size != 0):
         padding_pixels = 6  # Số lượng pixel bạn muốn thêm vào từ mỗi phía
         img_padded = await add_padding_and_resize(max_letter, padding_pixels)
         img_resize = cv2.resize(img_padded, (28, 28))
