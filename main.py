@@ -20,16 +20,20 @@ async def get_processed_images():
     return {"message": "No data to get"}
 
 async def process_image(image: UploadFile, index: int, results: List[str]):
+    print(f"Start processing word image {index}")
     image_data = await image.read()
     img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_GRAYSCALE)
     prediction = await detect(img)
     results[index] = prediction
+    print(f"Finished processing word image {index} with prediction {prediction}")
 
 async def process_image_digit(image: UploadFile, index: int, results: List[str]):
+    print(f"Start processing digit image {index}")
     image_data = await image.read()
     img = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_GRAYSCALE)
     prediction = await detect_digit(img)
     results[index] = prediction
+    print(f"Finished processing digit image {index} with prediction {prediction}")
 
 @app.post("/upload_images/")
 async def upload_image(images: List[UploadFile]):
@@ -52,6 +56,7 @@ async def upload_image(images: List[UploadFile]):
     await asyncio.gather(*tasks)
     
     print("Tong time: " + str(time.time() - start))
+    print("Kết quả cuối cùng:", results)
     return {"message": "Request successful", "results": results}
 
 async def detect(img):
